@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Book a Truck - Truck Booking</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+    .header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
+    .container {
+      max-width: 600px; margin: 30px auto; background-color: white;
+      padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    input, select {
+      width: 100%; padding: 10px; margin-top: 6px;
+      border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;
+    }
+    .btn {
+      margin-top: 25px; width: 100%; padding: 12px; font-size: 16px;
+      background-color: #28a745; color: white; border: none; border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn:hover { background-color: #218838; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Book Your Truck</h1>
+  </div>
+
+  <div class="container">
+    <h2>Truck Booking Form</h2>
+    <form id="bookingForm">
+      <label for="userEmail">Your Email</label>
+      <input type="email" id="userEmail" placeholder="example@email.com" required>
+
+      <label for="phoneNumber">Phone Number</label>
+      <input type="tel" id="phoneNumber" placeholder="e.g. 9876543210" required>
+
+      <label for="truckSelect">Select Truck</label>
+      <select id="truckSelect" required>
+        <option disabled selected>Loading available trucks...</option>
+      </select>
+
+      <label for="deliveryDate">Date of Delivery</label>
+      <input type="date" id="deliveryDate" required>
+
+      <label for="material">Material to be Delivered</label>
+      <input type="text" id="material" placeholder="e.g. Steel rods" required>
+
+      <label for="pickup">Pickup Location</label>
+      <input type="text" id="pickup" placeholder="e.g. Chennai" required>
+
+      <label for="delivery">Delivery Location</label>
+      <input type="text" id="delivery" placeholder="e.g. Coimbatore" required>
+
+      <button type="submit" class="btn">Book Truck</button>
+    </form>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuhbxnhqUZnbfYELDHTCJEI1k-LP1eKBo",
+      authDomain: "truckbooking-ab4d0.firebaseapp.com",
+      projectId: "truckbooking-ab4d0",
+      storageBucket: "truckbooking-ab4d0.appspot.com",
+      messagingSenderId: "249339346525",
+      appId: "1:249339346525:web:c3f2a1ce605eeccb2357b4"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const truckSelect = document.getElementById('truckSelect');
+
+    function fetchAvailableTrucks() {
+      db.collection("trucks").where("available", "==", true).get()
+        .then(snapshot => {
+          truckSelect.innerHTML = "<option disabled selected>Select a Truck</option>";
+          snapshot.forEach(doc => {
+            const truck = doc.data();
+            const option = document.createElement("option");
+            option.value = doc.id;
+            option.textContent = `${truck.truckName} - ${truck.vehicleNumber}`;
+            truckSelect.appendChild(option);
+          });
+        })
+        .catch(err => console.error("Error fetching trucks:", err));
+    }
+
+    fetchAvailableTrucks();
+
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const bookingData = {
+        userEmail: document.getElementById('userEmail').value,
+        phoneNumber: document.getElementById('phoneNumber').value,
+        truckId: truckSelect.value,
+        date: document.getElementById('deliveryDate').value,
+        material: document.getElementById('material').value,
+        pickup: document.getElementById('pickup').value,
+        delivery: document.getElementById('delivery').value,
+        status: "Pending",
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      db.collection("bookings").add(bookingData)
+        .then(() => db.collection("trucks").doc(bookingData.truckId).update({ available: false }))
+        .then(() => {
+          alert("Truck booked successfully!");
+          document.getElementById("bookingForm").reset();
+          fetchAvailableTrucks();
+          window.location.href = "userdashboard.html";
+        })
+        .catch(err => {
+          console.error("Error booking truck:", err);
+          alert("Error: " + err.message);
+        });
+    });
+  </script>
+</body>
+</html>
