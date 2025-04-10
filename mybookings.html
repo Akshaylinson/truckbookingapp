@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Bookings - Truck Booking</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #ccc;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .status-approved {
+      color: green;
+      font-weight: bold;
+    }
+
+    .status-pending {
+      color: orange;
+      font-weight: bold;
+    }
+
+    .back-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      text-align: center;
+      text-decoration: none;
+      width: 200px;
+    }
+
+    .back-btn:hover {
+      background-color: #0056b3;
+    }
+
+    .email-input-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #emailInput {
+      padding: 10px;
+      width: 300px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    #showBookingsBtn {
+      padding: 10px 20px;
+      margin-left: 10px;
+      border: none;
+      background-color: #28a745;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #showBookingsBtn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>My Bookings</h2>
+
+  <div class="email-input-container">
+    <input type="email" id="emailInput" placeholder="Enter your email" />
+    <button id="showBookingsBtn">Show My Bookings</button>
+  </div>
+
+  <table id="bookingTable">
+    <thead>
+      <tr>
+        <th>Vehicle Number</th>
+        <th>Pickup</th>
+        <th>Delivery</th>
+        <th>Material</th>
+        <th>Date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <a href="userdashboard.html" class="back-btn">← Back to Dashboard</a>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getFirestore, collection, getDocs, getDoc, doc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuhbxnhqUZnbfYELDHTCJEI1k-LP1eKBo",
+      authDomain: "truckbooking-ab4d0.firebaseapp.com",
+      projectId: "truckbooking-ab4d0",
+      storageBucket: "truckbooking-ab4d0.appspot.com",
+      messagingSenderId: "249339346525",
+      appId: "1:249339346525:web:c3f2a1ce605eeccb2357b4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const bookingsRef = collection(db, "bookings");
+
+    async function loadUserBookings() {
+      const email = document.getElementById('emailInput').value.trim();
+      const tbody = document.querySelector("#bookingTable tbody");
+      tbody.innerHTML = "";
+
+      if (!email) {
+        alert("Please enter your email address.");
+        return;
+      }
+
+      try {
+        const bookingSnapshot = await getDocs(bookingsRef);
+        let found = false;
+
+        for (const docSnap of bookingSnapshot.docs) {
+          const booking = docSnap.data();
+
+          if (booking.userEmail === email) {
+            found = true;
+            let vehicleNumber = "Loading...";
+            try {
+              const truckDoc = await getDoc(doc(db, "trucks", booking.truckId));
+              if (truckDoc.exists()) {
+                vehicleNumber = truckDoc.data().vehicleNumber || "Not found";
+              } else {
+                vehicleNumber = "Truck not found";
+              }
+            } catch (err) {
+              vehicleNumber = "Error fetching";
+            }
+
+            const statusClass = booking.status === "approved" ? "status-approved" : "status-pending";
+
+            tbody.innerHTML += `
+              <tr>
+                <td>${vehicleNumber}</td>
+                <td>${booking.pickup}</td>
+                <td>${booking.delivery}</td>
+                <td>${booking.material}</td>
+                <td>${booking.date}</td>
+                <td class="${statusClass}">${booking.status || 'Pending'}</td>
+              </tr>
+            `;
+          }
+        }
+
+        if (!found) {
+          tbody.innerHTML = `<tr><td colspan="6">No bookings found for this email.</td></tr>`;
+        }
+      } catch (error) {
+        console.error("Error loading bookings:", error);
+        alert("Something went wrong while loading bookings.");
+      }
+    }
+
+    document.getElementById("showBookingsBtn").addEventListener("click", loadUserBookings);
+  </script>
+
+</body>
+</html>
