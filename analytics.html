@@ -1,0 +1,258 @@
+<!-- HTML FILE: analytics.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Analytics Dashboard - Truck Booking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #f4f6f8;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .dashboard {
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px;
+    }
+    .chart-container {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    canvas {
+      width: 100% !important;
+      max-height: 400px;
+    }
+    .filters {
+      margin-top: 10px;
+    }
+    select, button {
+      padding: 8px;
+      margin: 5px;
+    }
+    .export-btns {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Truck Booking Analytics Dashboard</h1>
+</header>
+
+<div class="dashboard">
+
+  <!-- Bookings Per Month -->
+  <div class="chart-container">
+    <h3>📊 Bookings per Month</h3>
+    <canvas id="monthlyBookingsChart"></canvas>
+  </div>
+
+  <!-- Total Trucks with Filters -->
+  <div class="chart-container">
+    <h3>🚛 Total Trucks by Category & Company</h3>
+    <div class="filters">
+      <label>Category:</label>
+      <select id="filterCategory">
+        <option value="all">All</option>
+        <option value="mini">Mini</option>
+        <option value="medium">Medium</option>
+        <option value="heavy">Heavy</option>
+      </select>
+      <label>Company:</label>
+      <select id="filterCompany">
+        <option value="all">All</option>
+        <option value="Tata">Tata</option>
+        <option value="Ashok Leyland">Ashok Leyland</option>
+        <option value="Mahindra">Mahindra</option>
+      </select>
+    </div>
+    <canvas id="truckChart"></canvas>
+  </div>
+
+  <!-- Booking Trends -->
+  <div class="chart-container">
+    <h3>📈 Booking Trends (Daily/Weekly)</h3>
+    <canvas id="bookingTrendsChart"></canvas>
+  </div>
+
+  <!-- Bookings Pie Chart by Year -->
+  <div class="chart-container">
+    <h3>📅 Bookings Distribution in Year</h3>
+    <div class="filters">
+      <label>Year:</label>
+      <select id="yearSelector">
+        <option value="2024">2024</option>
+        <option value="2025" selected>2025</option>
+      </select>
+    </div>
+    <canvas id="yearlyBookingPieChart"></canvas>
+  </div>
+
+  <!-- Total Booking Categories -->
+  <div class="chart-container">
+    <h3>📦 Total Booking Stats</h3>
+    <canvas id="bookingCategoryChart"></canvas>
+  </div>
+
+  <!-- User Logins per Month -->
+  <div class="chart-container">
+    <h3>👤 User Login Trends</h3>
+    <div class="filters">
+      <label>Year:</label>
+      <select id="loginYear">
+        <option value="2024">2024</option>
+        <option value="2025" selected>2025</option>
+      </select>
+    </div>
+    <canvas id="loginTrendsChart"></canvas>
+  </div>
+
+  <!-- Export Buttons -->
+  <div class="export-btns">
+    <button onclick="exportToPDF()">Export as PDF</button>
+    <button onclick="exportToCSV()">Export as CSV</button>
+  </div>
+
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCuhbxnhqUZnbfYELDHTCJEI1k-LP1eKBo",
+    authDomain: "truckbooking-ab4d0.firebaseapp.com",
+    projectId: "truckbooking-ab4d0",
+    storageBucket: "truckbooking-ab4d0.appspot.com",
+    messagingSenderId: "249339346525",
+    appId: "1:249339346525:web:c3f2a1ce605eeccb2357b4",
+    measurementId: "G-05JGSEZXDE"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // Mocked chart data loading function
+  function loadChartData() {
+    // Here you'd query Firestore and build actual data.
+    // Replace with real Firebase logic as needed.
+
+    // Bookings per month chart
+    new Chart(document.getElementById('monthlyBookingsChart'), {
+      type: 'bar',
+      data: {
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        datasets: [{
+          label: 'Bookings',
+          data: [12, 19, 3, 5, 2, 3, 10, 4, 7, 6, 11, 14],
+          backgroundColor: '#007bff'
+        }]
+      }
+    });
+
+    // Total trucks chart
+    new Chart(document.getElementById('truckChart'), {
+      type: 'bar',
+      data: {
+        labels: ["Tata", "Ashok Leyland", "Mahindra"],
+        datasets: [{
+          label: 'Trucks',
+          data: [10, 7, 12],
+          backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+        }]
+      }
+    });
+
+    // Booking trends
+    new Chart(document.getElementById('bookingTrendsChart'), {
+      type: 'line',
+      data: {
+        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        datasets: [{
+          label: 'Bookings',
+          data: [5, 8, 4, 9, 6, 3, 7],
+          borderColor: '#17a2b8',
+          fill: false
+        }]
+      }
+    });
+
+    // Yearly bookings pie chart
+    new Chart(document.getElementById('yearlyBookingPieChart'), {
+      type: 'pie',
+      data: {
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+        datasets: [{
+          data: [5, 3, 6, 4, 2, 7],
+          backgroundColor: ['#6f42c1', '#007bff', '#28a745', '#ffc107', '#fd7e14', '#dc3545']
+        }]
+      }
+    });
+
+    // Booking categories
+    new Chart(document.getElementById('bookingCategoryChart'), {
+      type: 'bar',
+      data: {
+        labels: ["Total", "Approved", "Deleted"],
+        datasets: [{
+          label: 'Bookings',
+          data: [40, 30, 10],
+          backgroundColor: ['#007bff', '#28a745', '#dc3545']
+        }]
+      }
+    });
+
+    // User login trends
+    new Chart(document.getElementById('loginTrendsChart'), {
+      type: 'line',
+      data: {
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+        datasets: [{
+          label: 'Logins',
+          data: [12, 18, 10, 15, 9, 13],
+          borderColor: '#ffc107',
+          fill: false
+        }]
+      }
+    });
+  }
+
+  function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Truck Booking Analytics Dashboard", 10, 10);
+    doc.text("Exported data (summarized)", 10, 20);
+    doc.save("analytics-report.pdf");
+  }
+
+  function exportToCSV() {
+    const csvData = [
+      ["Month", "Bookings"],
+      ["Jan", 12], ["Feb", 19], ["Mar", 3] // Add more rows as needed
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(csvData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bookings");
+    XLSX.writeFile(wb, "analytics.csv");
+  }
+
+  window.onload = loadChartData;
+</script>
+
+</body>
+</html>
