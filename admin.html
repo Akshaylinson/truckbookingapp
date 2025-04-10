@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - Truck Booking</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f2f2f2; }
+    .section { margin-bottom: 30px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    input, button { margin: 5px; padding: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    .btn { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-danger { background: #dc3545; }
+    .btn-approve { background: #28a745; }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuhbxnhqUZnbfYELDHTCJEI1k-LP1eKBo",
+      authDomain: "truckbooking-ab4d0.firebaseapp.com",
+      projectId: "truckbooking-ab4d0",
+      storageBucket: "truckbooking-ab4d0.appspot.com",
+      messagingSenderId: "249339346525",
+      appId: "1:249339346525:web:c3f2a1ce605eeccb2357b4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const trucksRef = collection(db, "trucks");
+    const bookingsRef = collection(db, "bookings");
+
+    window.addTruck = async function () {
+      const truck = {
+        truckName: truckName.value,
+        truckCategory: truckCategory.value,
+        vehicleNumber: vehicleNumber.value,
+        truckCapacity: truckCapacity.value,
+        truckCompany: truckCompany.value,
+        driverName: driverName.value,
+        driverContact: driverContact.value,
+        available: true,
+        createdAt: new Date()
+      };
+      await addDoc(trucksRef, truck);
+      alert("Truck added");
+      renderTrucks();
+      document.querySelectorAll('input').forEach(input => input.value = '');
+    };
+
+    async function renderTrucks() {
+      const snapshot = await getDocs(trucksRef);
+      const tbody = document.querySelector("#truckTable tbody");
+      tbody.innerHTML = "";
+      snapshot.forEach(docSnap => {
+        const t = docSnap.data(), id = docSnap.id;
+        tbody.innerHTML += `
+          <tr>
+            <td>${t.truckName}</td><td>${t.truckCategory}</td><td>${t.vehicleNumber}</td>
+            <td>${t.truckCapacity}</td><td>${t.truckCompany}</td><td>${t.driverName}</td>
+            <td>${t.driverContact}</td><td>${t.available ? 'Available' : 'Unavailable'}</td>
+            <td>
+              <button class="btn btn-approve" onclick="toggleAvailability('${id}', ${t.available})">
+                ${t.available ? 'Set Unavailable' : 'Set Available'}
+              </button>
+              <button class="btn btn-danger" onclick="deleteTruck('${id}')">Delete</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    async function renderBookings() {
+      const trucksSnapshot = await getDocs(trucksRef);
+      const truckMap = {};
+      trucksSnapshot.forEach(docSnap => {
+        const t = docSnap.data();
+        truckMap[docSnap.id] = t.vehicleNumber;
+      });
+
+      const snapshot = await getDocs(bookingsRef);
+      const tbody = document.querySelector("#bookingTable tbody");
+      tbody.innerHTML = "";
+      snapshot.forEach(docSnap => {
+        const b = docSnap.data(), id = docSnap.id;
+        const vehicleNumber = truckMap[b.truckId] || "Unknown";
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${b.userEmail}</td><td>${b.phoneNumber}</td><td>${vehicleNumber}</td>
+            <td>${b.pickup}</td><td>${b.delivery}</td><td>${b.material}</td>
+            <td>${b.date}</td><td>${b.status || 'Pending'}</td>
+            <td>
+              ${b.status !== "approved" ? `<button class="btn btn-approve" onclick="approveBooking('${id}')">Approve</button>` : ''}
+              <button class="btn btn-danger" onclick="deleteBooking('${id}')">Delete</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    window.toggleAvailability = async (id, status) =>
+      await updateDoc(doc(db, "trucks", id), { available: !status }).then(renderTrucks);
+
+    window.deleteTruck = async id =>
+      await deleteDoc(doc(db, "trucks", id)).then(renderTrucks);
+
+    window.approveBooking = async id =>
+      await updateDoc(doc(db, "bookings", id), { status: "approved" }).then(() => {
+        alert("Approved"); renderBookings();
+      });
+
+    window.deleteBooking = async id =>
+      await deleteDoc(doc(db, "bookings", id)).then(() => {
+        alert("Deleted"); renderBookings();
+      });
+
+    renderTrucks(); renderBookings();
+  </script>
+</head>
+<body>
+  <h2>Admin Dashboard</h2>
+
+  <div class="section">
+    <h3>Add Truck</h3>
+    <input id="truckName" placeholder="Truck Name">
+    <input id="truckCategory" placeholder="Category">
+    <input id="vehicleNumber" placeholder="Vehicle Number">
+    <input id="truckCapacity" placeholder="Capacity">
+    <input id="truckCompany" placeholder="Company">
+    <input id="driverName" placeholder="Driver Name">
+    <input id="driverContact" placeholder="Driver Contact">
+    <button class="btn" onclick="addTruck()">Add Truck</button>
+  </div>
+
+  <div class="section">
+    <h3>Truck List</h3>
+    <table id="truckTable">
+      <thead>
+        <tr>
+          <th>Name</th><th>Category</th><th>Number</th><th>Capacity</th><th>Company</th>
+          <th>Driver</th><th>Contact</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead><tbody></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h3>Booking List</h3>
+    <table id="bookingTable">
+      <thead>
+        <tr>
+          <th>User Email</th><th>Phone</th><th>Vehicle Number</th><th>Pickup</th><th>Delivery</th>
+          <th>Material</th><th>Date</th><th>Status</th><th>Actions</th>
+        </tr>
+      </thead><tbody></tbody>
+    </table>
+  </div>
+</body>
+</html>
