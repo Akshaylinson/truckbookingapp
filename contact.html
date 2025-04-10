@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact Us - Truck Booking</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .header {
+      background-color: #007bff;
+      padding: 20px;
+      text-align: center;
+      color: white;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      flex-grow: 1;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 5px;
+      font-weight: 600;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .btn {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: #218838;
+    }
+
+    .success-message {
+      margin-top: 15px;
+      color: green;
+      font-weight: bold;
+    }
+
+    .footer {
+      background-color: #343a40;
+      color: #ffffff;
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    .footer p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        margin: 20px;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Contact Us</h1>
+  </div>
+
+  <div class="container">
+    <h2>We'd love to hear from you!</h2>
+    <form id="contactForm">
+      <label for="name">Name</label>
+      <input type="text" id="name" placeholder="Your name">
+
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="Your email">
+
+      <label for="subject">Subject</label>
+      <input type="text" id="subject" placeholder="Subject of your message">
+
+      <label for="message">Message</label>
+      <textarea id="message" placeholder="Write your message here..."></textarea>
+
+      <button type="submit" class="btn">Send Message</button>
+      <p class="success-message" id="successMsg"></p>
+    </form>
+  </div>
+
+  <footer class="footer">
+    <p><strong>Email:</strong> support@truckbookings.com</p>
+    <p><strong>Phone:</strong> +91 98765 43210</p>
+    <p>&copy; 2025 Truck Booking Pvt. Ltd.</p>
+  </footer>
+
+  <script>
+    const form = document.getElementById('contactForm');
+    const successMsg = document.getElementById('successMsg');
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const subject = document.getElementById('subject').value.trim();
+      const message = document.getElementById('message').value.trim();
+
+      if (!name || !email || !subject || !message) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      successMsg.textContent = "Thank you for contacting us! We'll get back to you shortly.";
+      form.reset();
+    });
+  </script>
+
+</body>
+</html>
