@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Update Profile - Truck Booking</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      width: 400px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    #loginWarning {
+      color: red;
+      text-align: center;
+      margin-bottom: 15px;
+      display: none;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .btn:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+
+    .btn:hover:not(:disabled) {
+      background-color: #0056b3;
+    }
+  </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Update Profile</h2>
+    <div id="loginWarning">⚠️ You must log in to update your profile.</div>
+
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" id="username" disabled>
+    </div>
+    <div class="form-group">
+      <label for="phone">Phone</label>
+      <input type="text" id="phone" disabled>
+    </div>
+    <div class="form-group">
+      <label for="location">Location</label>
+      <input type="text" id="location" disabled>
+    </div>
+    <div class="form-group">
+      <label for="pincode">Pincode</label>
+      <input type="text" id="pincode" disabled>
+    </div>
+    <div class="form-group">
+      <label for="dob">Date of Birth</label>
+      <input type="date" id="dob" disabled>
+    </div>
+    <div class="form-group">
+      <label for="state">State</label>
+      <input type="text" id="state" disabled>
+    </div>
+
+    <button class="btn" id="saveBtn" onclick="updateProfile()" disabled>Save Changes</button>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuhbxnhqUZnbfYELDHTCJEI1k-LP1eKBo",
+      authDomain: "truckbooking-ab4d0.firebaseapp.com",
+      projectId: "truckbooking-ab4d0",
+      storageBucket: "truckbooking-ab4d0.appspot.com",
+      messagingSenderId: "249339346525",
+      appId: "1:249339346525:web:c3f2a1ce605eeccb2357b4",
+      measurementId: "G-05JGSEZXDE"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const inputs = document.querySelectorAll("input");
+    const saveBtn = document.getElementById("saveBtn");
+    const warning = document.getElementById("loginWarning");
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        warning.style.display = "block";
+      } else {
+        warning.style.display = "none";
+        inputs.forEach(input => input.disabled = false);
+        saveBtn.disabled = false;
+
+        const uid = user.uid;
+        db.collection('users').doc(uid).get().then(doc => {
+          if (doc.exists) {
+            const data = doc.data();
+            document.getElementById('username').value = data.username || '';
+            document.getElementById('phone').value = data.phone || '';
+            document.getElementById('location').value = data.location || '';
+            document.getElementById('pincode').value = data.pincode || '';
+            document.getElementById('dob').value = data.dob || '';
+            document.getElementById('state').value = data.state || '';
+          }
+        });
+      }
+    });
+
+    function updateProfile() {
+      const user = auth.currentUser;
+      if (!user) return alert("User not logged in.");
+
+      const uid = user.uid;
+      const updatedData = {
+        username: document.getElementById('username').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        location: document.getElementById('location').value.trim(),
+        pincode: document.getElementById('pincode').value.trim(),
+        dob: document.getElementById('dob').value,
+        state: document.getElementById('state').value.trim()
+      };
+
+      db.collection('users').doc(uid).set(updatedData, { merge: true })
+        .then(() => {
+          alert("Profile updated successfully!");
+          window.location.href = 'userdashboard.html';
+        })
+        .catch(error => {
+          console.error("Error updating profile:", error);
+          alert("Something went wrong while updating your profile.");
+        });
+    }
+  </script>
+</body>
+</html>
