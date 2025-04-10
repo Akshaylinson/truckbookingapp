@@ -125,14 +125,10 @@ Feel free to fork this project and submit a pull request.
 
 For queries or feedback, reach out via:
 
-- 📩 Email: [your.email@example.com]
-- 💬 GitHub: [github.com/yourusername](https://github.com/yourusername)
+- 📩 Email: [akshaylinson24@gmail.com]
+- 💬 GitHub: [github.com/Akshaylinson](https://github.com/Akshaylinson)
 
 ---
-
-## 📄 License
-
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
 ---
 
