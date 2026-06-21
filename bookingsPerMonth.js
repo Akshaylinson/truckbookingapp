@@ -1,12 +1,5 @@
 
 
-
-
-
-
-
-
-
 document.addEventListener("DOMContentLoaded", async () => {
     const ctx = document.getElementById("bookingsPerMonthChart").getContext("2d");
   
