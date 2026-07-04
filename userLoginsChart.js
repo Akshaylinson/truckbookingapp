@@ -2,7 +2,6 @@
 
 
 
-
 // userLoginsChart.js
 
 let userLoginsChartInstance;
