@@ -1,27 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
  """
 Run this once from the project root to download SD 1.5 inpainting.
 Usage:  python download_sd_model.py
