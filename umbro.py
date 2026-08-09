@@ -10,6 +10,17 @@ import uuid
 # Add backend to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
 
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Test Direct Engine Integration with Speech Normalization
+
+This script tests that the Piper engine is applying normalization
+directly in the TTS generation pipeline.
+"""
+
+
 def test_engine_normalization():
     """Test that Piper engine applies normalization during synthesis"""
     
