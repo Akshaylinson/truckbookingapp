@@ -3,16 +3,6 @@
 
 
 
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Test Direct Engine Integration with Speech Normalization
-
-This script tests that the Piper engine is applying normalization
-directly in the TTS generation pipeline.
-"""
-
 import sys
 import os
 import uuid
