@@ -1,18 +1,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 // userLoginsChart.js
 
 let userLoginsChartInstance;
