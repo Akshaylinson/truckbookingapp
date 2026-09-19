@@ -1,10 +1,4 @@
-
----
-
-```markdown
-# 🚛 Truck Booking Web App
-
-A web-based Truck Booking System that allows users to register, book trucks, manage their profile and track their previous bookings — all integrated with Firebase. Admins can easily manage truck listings and monitor user activities.
+tor user activities.
 
 ---
 
