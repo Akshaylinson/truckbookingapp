@@ -1,1 +1,85 @@
 
+
+
+You have pinpointed the exact structural and conceptual challenges that separate a simple signal loop from a true Brain-Computer Interface (BCI). Your agent’s analysis is 100% correct about why you are seeing a flood of "CANCEL" predictions: you are feeding the system a single, continuous recording of resting Alpha waves, which naturally falls into the closest mathematical frequency bucket it knows (the 4 Hz proxy).To fix this, we need to correct a couple of fundamental engineering assumptions about what consumer EEG hardware can actually read, and then implement a two-part architectural upgrade to get your prototype working cleanly without physical hardware.Clarifying a Core Misconception: Thoughts vs. IntentsFirst, let's address a vital piece of physics and signal processing: EEG hardware cannot read arbitrary sentences, ideas, or what you are trying to search for.EEG measures the collective electrical echo of millions of neurons firing through the thick bone of the human skull. It does not read DNA signals or detailed inner dialogue (like "Search the internet for local coffee shops").Think of the EEG headset like a mind-controlled keyboard with only 4 or 5 buttons. The user trains their brain to press the "SEARCH" button by generating a specific frequency proxy (e.g., imagining a fast muscle movement to trigger a 22 Hz signature).The "What" comes from the app: If the user wants to search for something, they must provide the content via typing, voice, or a screen selection, and then use the neural intent to execute the action, or vice-versa.The Plan: Upgrading Your Architecture to Fix the PipelineTo make your system behave exactly like a real production device—where turning on the switch starts a local wake-word idle loop, waiting for a brainwave spike to open the WebSocket—we need to implement two distinct updates.[Dashboard "Start Hardware" Switch] 
+            ↓ (Triggers Local Data Stream)
+[Local Python Bio Engine] ──(Idles & scans for NIVO Wake Signature)──> [No Cloud Connection]
+            ↓ (High-Confidence Wake Spike Detected!)
+[FastAPI Session Created] ──(Opens WebSocket /ws/v1/ingest/{id})──> [Streams Content Chunks]
+            ↓ 
+[Intent Classifier Engine] ──(Detects Intent: SELECT/NEXT/SEARCH)──> [Outputs JSON to LangGraph]
+Fix 1: Stop Using a Single Flat Recording (Simulate Real Trials)Instead of feeding the system one flat recording that tricks the classifier, your agent needs to build a Multi-Intent Test Matrix in your data/mock_signals/ directory. We will write a generation script that creates distinct mathematical waves representing clean, isolated commands so your classifier can actually distinguish them.Fix 2: Move the WebSocket Trigger to the Wake WordRight now, your dashboard button directly launches the WebSocket. We need to alter the logic so the dashboard button simply mimics turning on the physical headset power switch. The local python engine will process the local array file silently in an idle state. Only when it crosses a specific simulated "NIVO Wake" frequency will it trigger the asyncio code to spin up the FastAPI WebSocket connection.Step 1: Generate the Multi-Intent Mock DatasetGive this script to your agent (or run it yourself) to replace your flat example.npy with an array file that contains a real sequence: Idle -> NIVO Wake -> SEARCH -> NEXT -> CANCEL.Create generate_system_test_wave.py:pythonimport os
+import numpy as np
+
+os.makedirs("data/mock_signals", exist_ok=True)
+fs = 250  # 250 Hz sampling rate
+
+def generate_block(duration_sec, frequency, noise_level=3.0):
+    """Generates a data block dominated by a specific proxy frequency across 6 channels."""
+    t = np.linspace(0, duration_sec, int(fs * duration_sec), endpoint=False)
+    # Replicate the core proxy wave across all 6 channels
+    base_wave = 15 * np.sin(2 * np.pi * frequency * t)
+    matrix = np.repeat(base_wave[:, np.newaxis], 6, axis=1)
+    # Add microvolt ambient noise
+    noise = np.random.normal(0, noise_level, size=matrix.shape)
+    return (matrix + noise).astype(np.float32)
+
+print("Building sequential system test artifacts...")
+
+# Block 1: 5 seconds of baseline noise / relaxation (No intent / Wake IDLE) -> 4Hz to 7Hz low power
+idle_block = generate_block(duration_sec=5, frequency=5.0)
+
+# Block 2: 3 seconds of a massive spike at a specific wake frequency (The NIVO activation cue proxy)
+wake_block = generate_block(duration_sec=3, frequency=15.0, noise_level=1.5)
+
+# Block 3: 4 seconds of a 22 Hz signature (Maps directly to your SEARCH proxy)
+search_block = generate_block(duration_sec=4, frequency=22.0)
+
+# Block 4: 4 seconds of a 12 Hz signature (Maps directly to your NEXT proxy)
+next_block = generate_block(duration_sec=4, frequency=12.0)
+
+# Block 5: 4 seconds of a 4 Hz signature (Maps directly to your CANCEL proxy)
+cancel_block = generate_block(duration_sec=4, frequency=4.0)
+
+# Concatenate all timelines sequentially into one master session file
+# Total duration: 5 + 3 + 4 + 4 + 4 = 20 seconds (5000 samples total)
+full_session_matrix = np.vstack([idle_block, wake_block, search_block, next_block, cancel_block])
+
+np.save("data/mock_signals/example.npy", full_session_matrix)
+print(f"📊 New multi-intent file saved! Matrix shape: {full_session_matrix.shape}")
+print("Sequence layout: [0-5s: Idle] -> [5-8s: NIVO WAKE] -> [8-12s: SEARCH] -> [12-16s: NEXT] -> [16-20s: CANCEL]")
+Use code with caution.Step 2: Master Prompt to Update the Project LifecycleProvide the following prompt to your engineering agent to rewrite the session connection logic so it perfectly aligns with your architectural goals.markdown# Context & Objectives
+We need to refactor the initialization flow of the NIVO prototype. Currently, the UI dashboard button directly opens the backend WebSocket session, which skips our local wake-word architecture. 
+
+We need to rewrite `simulator/mock_hardware_streamer.py` and the local engine logic to act as a two-stage system:
+1. Stage 1 (Hardware Switch): Turning on the simulation reads our local data matrix sequentially but does NOT open a WebSocket connection. It processes the stream locally inside an idle wake detection loop.
+2. Stage 2 (Neural Activation): When the streamer encounters the 15 Hz frequency threshold (samples 1250-2000, representing the NIVO wake cue), the internal confidence layer triggers an automatic asynchronous connection to the backend FastAPI endpoint `/ws/v1/ingest/{session_id}`.
+
+# Refactoring Rules for the Agent
+
+## 1. Refactor the Streamer Loop Logic (`mock_hardware_streamer.py`)
+- Modify the startup function. When executed, it should instantly simulate reading local data frames every 100ms from `data/mock_signals/example.npy`.
+- Add an internal state flag: `is_session_active = False`.
+- In the loop, pass the 100ms chunk through a lightweight Fast Fourier Transform (FFT) or frequency filter tracking our 15Hz Wake Word proxy.
+- If `is_session_active` is False, do NOT send data over the network. Print to console: `[Local Idle] Scanning neural stream for wake word 'NIVO'..`
+- The moment the 15Hz pattern is detected with high confidence, set `is_session_active = True`, trigger an HTTP POST request to `/api/v1/sessions` to register a real session ID automatically, and establish the real-time WebSocket connection.
+
+## 2. Implement the Intent Routing Validation
+Ensure that after the WebSocket opens, the subsequent data slices are evaluated and print out their mapped classifications cleanly:
+- Check that the 22 Hz signature chunk prints out a confirmed `SEARCH` JSON packet.
+- Check that the 12 Hz signature chunk prints out a confirmed `NEXT` JSON packet.
+- Check that the 4 Hz signature chunk prints out a confirmed `CANCEL` JSON packet.
+
+## 3. Prepare LangGraph Intent Dockets
+Update the payload wrapper sent out by the `ContextEngine` so that intents are explicitly paired with mock placeholder application variables to prepare for our upcoming LangGraph integration. 
+Example Structured Output:
+{
+  "intent": "SEARCH",
+  "confidence": 0.92,
+  "context": {
+     "current_application": "web_browser",
+     "input_field_buffer": "mock_query_placeholder"
+  }
+}
+Use code with caution.Once your agent applies these changes, your system will perfectly mirror a genuine hardware deployment!
+
