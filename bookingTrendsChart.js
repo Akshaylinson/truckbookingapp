@@ -1,9 +1,4 @@
 
-
-
-
-
-
 // bookingTrendsChart.js
 
 const trendTypeSelect = document.getElementById("trendType");
